@@ -1,10 +1,11 @@
+// ✅ รองรับทั้ง dev (localhost) และ prod (Render)
+const API_BASE_URL = location.hostname.includes('localhost')
+  ? 'http://localhost:3000'
+  : 'https://fix-client-karan.onrender.com';
+
 let currentWatchlist = {};
 let forexInterval = null;
 
-// ✅ URL ของ backend (Render)
-const API_URL = 'https://fix-client-karan.onrender.com/forex_data.json';
-
-// ✅ ปรับขนาดฟอนต์
 function adjustFontSize(delta) {
   const html = document.documentElement;
   const body = document.body;
@@ -14,7 +15,6 @@ function adjustFontSize(delta) {
   body.style.fontSize = newSize + 'px';
 }
 
-// ✅ แปลงราคาให้มี comma
 function formatPrice(value) {
   const num = parseFloat(value);
   return isNaN(num)
@@ -25,7 +25,6 @@ function formatPrice(value) {
       });
 }
 
-// ✅ โหลดราคาสดจาก backend
 async function loadForexPrices() {
   const output = document.getElementById('forex-output');
   if (!output) return;
@@ -33,7 +32,7 @@ async function loadForexPrices() {
   output.innerHTML = '📡 กำลังโหลด...';
 
   try {
-    const res = await fetch(API_URL + '?t=' + Date.now());
+    const res = await fetch(`${API_BASE_URL}/forex_data.json?t=${Date.now()}`);
     const data = await res.json();
 
     const visibleSymbols = Object.keys(currentWatchlist).filter(
@@ -52,7 +51,7 @@ async function loadForexPrices() {
             .join('')}
         </tbody>
       </table>
-      <p style="font-size: 0.8em; color: gray;">📡 Source: ${data.source}</p>
+      <p style="font-size: 0.8em; color: gray;">📡 Source: ${data.source || 'FIX Client'}</p>
     `;
   } catch (err) {
     output.innerHTML = '❌ โหลดข้อมูลไม่สำเร็จ';
@@ -60,13 +59,12 @@ async function loadForexPrices() {
   }
 }
 
-// ✅ โหลด watchlist และแสดง checkbox
 async function loadWatchlistTab() {
   const list = document.getElementById('watchlist-list');
   list.innerHTML = '📡 กำลังโหลด...';
 
   try {
-    const res = await fetch('/api/watchlist?t=' + Date.now());
+    const res = await fetch(`${API_BASE_URL}/api/watchlist?t=${Date.now()}`);
     const watchlist = await res.json();
     currentWatchlist = watchlist;
 
@@ -99,10 +97,9 @@ async function loadWatchlistTab() {
   }
 }
 
-// ✅ บันทึก watchlist กลับไปที่ backend
 async function saveWatchlist(data) {
   try {
-    await fetch('/api/watchlist', {
+    await fetch(`${API_BASE_URL}/api/watchlist`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -114,7 +111,6 @@ async function saveWatchlist(data) {
   }
 }
 
-// ✅ เปลี่ยนแท็บ
 function switchTab(tabId) {
   document.querySelectorAll('.tab').forEach((tab) => {
     tab.style.display = 'none';
@@ -132,7 +128,6 @@ function switchTab(tabId) {
   }
 }
 
-// ✅ เริ่มโหลดราคาสดเมื่อเข้าแท็บ Forex
 async function startForexUpdates() {
   clearInterval(forexInterval);
   await loadWatchlist();
@@ -140,10 +135,9 @@ async function startForexUpdates() {
   forexInterval = setInterval(loadForexPrices, 3000);
 }
 
-// ✅ โหลด watchlist สำหรับแท็บ Forex
 async function loadWatchlist() {
   try {
-    const res = await fetch('/api/watchlist?t=' + Date.now());
+    const res = await fetch(`${API_BASE_URL}/api/watchlist?t=${Date.now()}`);
     currentWatchlist = await res.json();
   } catch (err) {
     console.error('❌ โหลด watchlist ไม่สำเร็จ:', err);
@@ -155,7 +149,6 @@ async function loadWatchlist() {
   }
 }
 
-// ✅ ตั้งค่า event สำหรับปุ่ม nav
 document.querySelectorAll('nav button').forEach((btn) => {
   btn.addEventListener('click', () => {
     const tab = btn.getAttribute('onclick').match(/switchTab\('(.+)'\)/)[1];
@@ -163,5 +156,4 @@ document.querySelectorAll('nav button').forEach((btn) => {
   });
 });
 
-// ✅ เริ่มต้นที่แท็บแรก
 switchTab('set');
