@@ -1,3 +1,6 @@
+const chromium = require('@sparticuz/chromium');
+const { chromium: playwrightChromium } = require('playwright-core');
+
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
@@ -43,13 +46,16 @@ app.get('/set_data.json', (req, res) => {
 async function getSETPrice(symbol) {
   try {
     const url = `https://www.set.or.th/en/market/product/stock/quote/${symbol}/price`;
-    const browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+
+    const browser = await playwrightChromium.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+      defaultViewport: chromium.defaultViewport,
     });
 
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'networkidle2' });
+    await page.goto(url, { waitUntil: 'networkidle' });
 
     const price = await page.evaluate(() => {
       const el = document.querySelector('.stock-info');
@@ -63,6 +69,7 @@ async function getSETPrice(symbol) {
     return null;
   }
 }
+
 
 // ✅ GET: ราคาหุ้นจาก watchlist + cache
 app.get('/api/set-prices', async (req, res) => {
