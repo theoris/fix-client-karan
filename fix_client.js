@@ -1,20 +1,55 @@
 const net = require('net');
 const fs = require('fs');
+const path = require('path');
 
+// ✅ Config จาก environment
 const config = {
-  host: process.env.FIX_HOST,
-  port: parseInt(process.env.FIX_PORT),
-  senderCompID: process.env.FIX_SENDER,
-  targetCompID: process.env.FIX_TARGET,
-  senderSubID: process.env.FIX_SENDER_SUB,
-  targetSubID: process.env.FIX_TARGET_SUB,
-  username: process.env.FIX_USER,
-  password: process.env.FIX_PASS
+  host: process.env.FIX_HOST || 'localhost',
+  port: parseInt(process.env.FIX_PORT) || 5201,
+  senderCompID: process.env.FIX_SENDER || 'DEV_SENDER',
+  targetCompID: process.env.FIX_TARGET || 'DEV_TARGET',
+  senderSubID: process.env.FIX_SENDER_SUB || 'SUB',
+  targetSubID: process.env.FIX_TARGET_SUB || 'SUB',
+  username: process.env.FIX_USER || 'user',
+  password: process.env.FIX_PASS || 'pass'
 };
 
+// ✅ Symbol map
 const symbolIdMap = {
-  XAUUSD: '41', EURUSD: '1', USDJPY: '3'
-  // ... (ตัดให้สั้นลงได้ตามต้องการ)
+  XAUUSD: '41',
+  XAGUSD: '42',
+  BTCUSD: '10026',
+  AUDUSD: '5',
+  EURUSD: '1',
+  GBPUSD: '2',
+  NZDUSD: '12',
+  USDCAD: '8',
+  USDCHF: '6',
+  USDJPY: '3',
+  AUDCAD: '18',
+  AUDCHF: '23',
+  AUDJPY: '11',
+  AUDNZD: '20',
+  CADCHF: '27',
+  CADJPY: '15',
+  CHFJPY: '13',
+  EURAUD: '14',
+  EURCAD: '17',
+  EURCHF: '10',
+  EURGBP: '9',
+  EURJPY: '3',
+  EURNZD: '26',
+  GBPAUD: '16',
+  GBPCAD: '19',
+  GBPCHF: '40',
+  GBPJPY: '7',
+  GBPNZD: '25',
+  NZDCAD: '30',
+  NZDCHF: '39',
+  NZDJPY: '21',
+  HK50: '10004',
+  US500: '10013',
+  SPOTCRUDE: '10053'
 };
 
 const reverseSymbolMap = Object.fromEntries(
@@ -129,11 +164,12 @@ function sendMarketDataRequest(socket, msgSeqNum, visibleSymbols) {
   socket.write(mdRequest);
 }
 
+let reconnectTimeout = null;
+let heartbeatInterval = null;
+
 function startFIXClient() {
   const socket = new net.Socket();
   let msgSeqNum = 1;
-
-  // ✅ โหลด watchlist สดจากไฟล์ทุกครั้ง
   const visibleSymbols = getVisibleSymbols();
 
   socket.connect({ port: config.port, host: config.host }, () => {
@@ -168,13 +204,11 @@ function startFIXClient() {
 
       if (msgType === 'A') {
         console.log('✅ FIX Logon successful');
-
-        // ✅ โหลด watchlist สดอีกครั้งก่อน subscribe
         const updatedSymbols = getVisibleSymbols();
         sendMarketDataRequest(socket, msgSeqNum++, updatedSymbols);
 
-        // ✅ ส่ง heartbeat ทุก 30 วินาที
-        setInterval(() => {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = setInterval(() => {
           const heartbeat = buildFIXMessage([
             ['35', '0'],
             ['34', msgSeqNum++],
@@ -218,11 +252,21 @@ function startFIXClient() {
   });
 }
 
-function reconnect() {
-  console.log('🔁 Reconnecting in 5 seconds...');
-  setTimeout(() => {
+function reconnect(delay = 5000) {
+  if (reconnectTimeout) return;
+  console.log(`🔁 Reconnecting in ${delay / 1000} seconds...`);
+  reconnectTimeout = setTimeout(() => {
+    reconnectTimeout = null;
     startFIXClient();
-  }, 5000);
+  }, delay);
 }
 
+// ✅ Watch watchlist.json for changes
+const watchlistPath = path.resolve(__dirname, 'watchlist.json');
+fs.watchFile(watchlistPath, { interval: 1000 }, (curr, prev) => {
+  console.log('🔁 watchlist.json changed → reconnecting FIX client...');
+  reconnect(2000); // reconnect after 2s
+});
+
+// ✅ เริ่มต้น
 startFIXClient();
