@@ -46,10 +46,13 @@ async function getSETPrice(symbol) {
 
     const browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      timeout: 0 // ✅ ปิด timeout
     });
 
     const page = await browser.newPage();
+    page.setDefaultNavigationTimeout(0); // ✅ ปิด timeout ระหว่างโหลด
+
     await page.goto(url, { waitUntil: 'networkidle2' });
 
     const price = await page.evaluate(() => {
@@ -64,6 +67,7 @@ async function getSETPrice(symbol) {
     return null;
   }
 }
+
 
 // ✅ GET: ราคาหุ้นจาก watchlist + cache
 app.get('/api/set-prices', async (req, res) => {
