@@ -1,8 +1,14 @@
-// server.js
 const express = require('express');
 const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+  res.send(`
+    <h2>✅ FIX Client is running</h2>
+    <p>Try <a href="/forex_data.json">/forex_data.json</a> to see live data.</p>
+  `);
+});
 
 app.get('/forex_data.json', (req, res) => {
   try {
