@@ -28,6 +28,11 @@ function formatPrice(value) {
 async function loadForexPrices() {
   const output = document.getElementById('forex-output');
   if (!output) return;
+  if (visibleSymbols.length === 0) {
+    output.innerHTML = '<p>⚠️ ไม่มี symbol ที่เลือกไว้ใน watchlist</p>';
+    return;
+  }
+
 
   try {
     const res = await fetch(`${API_BASE_URL}/forex_data.json?t=${Date.now()}`);
@@ -73,6 +78,11 @@ async function loadForexPrices() {
         cell.textContent = newPrice;
       }
     });
+    console.log('📊 currentWatchlist:', currentWatchlist);
+    console.log('📊 forex data:', data);
+    console.log('📊 visibleSymbols:', visibleSymbols);
+
+
   } catch (err) {
     output.innerHTML = '❌ โหลดข้อมูลไม่สำเร็จ';
     console.error(err);
@@ -148,13 +158,13 @@ function switchTab(tabId) {
     loadWatchlistTab();
   }
 }
-
 async function startForexUpdates() {
   clearInterval(forexInterval);
-  await loadWatchlist();
+  await loadWatchlist(); // ✅ ต้องโหลดก่อน
   loadForexPrices();
   forexInterval = setInterval(loadForexPrices, 3000);
 }
+
 
 async function loadWatchlist() {
   try {
