@@ -5,7 +5,7 @@ const API_BASE_URL = location.hostname.includes('localhost')
 let currentWatchlist = {};
 let forexInterval = null;
 let setPriceInterval = null;
-
+let previousSETPrices = {};
 
 function adjustFontSize(delta) {
   const html = document.documentElement;
@@ -43,7 +43,6 @@ async function loadForexPrices() {
       return;
     }
 
-    // ✅ สร้างตารางครั้งแรก
     if (!output.querySelector('table')) {
       output.innerHTML = `
         <table>
@@ -61,7 +60,6 @@ async function loadForexPrices() {
       `;
     }
 
-    // ✅ อัปเดตเฉพาะราคาที่เปลี่ยน
     visibleSymbols.forEach((code) => {
       const cell = output.querySelector(`td[data-symbol="${code}"]`);
       const newPrice = formatPrice(data[code]);
@@ -80,6 +78,47 @@ async function loadForexPrices() {
     });
   } catch (err) {
     output.innerHTML = '❌ โหลดข้อมูลไม่สำเร็จ';
+    console.error(err);
+  }
+}
+
+async function loadSETPrices() {
+  const output = document.getElementById('set-output');
+  if (!output) return;
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/set-prices?t=${Date.now()}`);
+    const data = await res.json();
+
+    const symbols = Object.keys(data).filter(sym => sym !== 'cached');
+    if (symbols.length === 0) {
+      output.innerHTML = '<p>⚠️ ไม่มีหุ้นใน SET Watchlist</p>';
+      return;
+    }
+
+    const now = new Date().toLocaleTimeString();
+    output.innerHTML = `
+      <table>
+        <thead><tr><th>หุ้น</th><th>ราคา</th></tr></thead>
+        <tbody>
+          ${symbols.map(symbol => {
+            const price = data[symbol];
+            const prev = previousSETPrices[symbol];
+            let cls = '';
+            if (prev && !isNaN(price) && !isNaN(prev)) {
+              if (parseFloat(price) > parseFloat(prev)) cls = 'price-up';
+              else if (parseFloat(price) < parseFloat(prev)) cls = 'price-down';
+            }
+            return `<tr><td>${symbol}</td><td class="${cls}">${price}</td></tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      <p style="font-size: 0.8em; color: gray;">📡 Source: SET — อัปเดตล่าสุด ${now}</p>
+    `;
+
+    previousSETPrices = data;
+  } catch (err) {
+    output.innerHTML = '❌ โหลดราคาหุ้น SET ไม่สำเร็จ';
     console.error(err);
   }
 }
@@ -118,78 +157,6 @@ async function loadWatchlistTab() {
     });
   } catch (err) {
     list.innerHTML = '❌ โหลด watchlist ไม่สำเร็จ';
-    console.error(err);
-  }
-}
-
-async function loadSETData() {
-  const output = document.getElementById('set-output');
-  if (!output) return;
-
-  output.innerHTML = '📡 กำลังโหลดข้อมูล SET...';
-
-  try {
-    // 🔁 ตัวอย่าง mock API (คุณสามารถเปลี่ยนเป็น API จริงได้)
-    const res = await fetch('https://theoris.github.io/fix-client-karan/set_data.json');
-    const data = await res.json();
-
-    output.innerHTML = `
-      <table>
-        <thead><tr><th>หุ้น</th><th>ราคา</th></tr></thead>
-        <tbody>
-          ${data.map(
-            (item) =>
-              `<tr><td>${item.symbol}</td><td>${item.price}</td></tr>`
-          ).join('')}
-        </tbody>
-      </table>
-    `;
-  } catch (err) {
-    output.innerHTML = '❌ โหลดข้อมูล SET ไม่สำเร็จ';
-    console.error(err);
-  }
-}
-
-let previousSETPrices = {};
-
-async function loadSETPrices() {
-  const output = document.getElementById('set-output');
-  if (!output) return;
-
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/set-prices?t=${Date.now()}`);
-    const data = await res.json();
-
-    const symbols = Object.keys(data).filter(sym => sym !== 'cached');
-
-    if (symbols.length === 0) {
-      output.innerHTML = '<p>⚠️ ไม่มีหุ้นใน SET Watchlist</p>';
-      return;
-    }
-
-    // ✅ สร้างตาราง
-    output.innerHTML = `
-      <table>
-        <thead><tr><th>หุ้น</th><th>ราคา</th></tr></thead>
-        <tbody>
-          ${symbols.map(symbol => {
-            const price = data[symbol];
-            const prev = previousSETPrices[symbol];
-            let cls = '';
-            if (prev && !isNaN(price) && !isNaN(prev)) {
-              if (parseFloat(price) > parseFloat(prev)) cls = 'price-up';
-              else if (parseFloat(price) < parseFloat(prev)) cls = 'price-down';
-            }
-            return `<tr><td>${symbol}</td><td class="${cls}">${price}</td></tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-      <p style="font-size: 0.8em; color: gray;">📡 Source: SET</p>
-    `;
-
-    previousSETPrices = data;
-  } catch (err) {
-    output.innerHTML = '❌ โหลดราคาหุ้น SET ไม่สำเร็จ';
     console.error(err);
   }
 }
@@ -238,10 +205,9 @@ function switchTab(tabId) {
   document.querySelectorAll('.tab').forEach((tab) => {
     tab.style.display = 'none';
   });
-  //document.getElementById(`${tabId}-tab`).style.display = 'block';
+
   const tabEl = document.getElementById(`${tabId}-tab`);
   if (tabEl) tabEl.style.display = 'block';
-
 
   if (tabId === 'forex') {
     startForexUpdates();
@@ -252,7 +218,7 @@ function switchTab(tabId) {
 
   if (tabId === 'watchlist') {
     loadWatchlistTab();
-    loadSETWatchlist(); // ✅ โหลด SET watchlist ด้วย
+    loadSETWatchlist();
   }
 }
 
@@ -262,13 +228,11 @@ async function startForexUpdates() {
 
   await loadWatchlist();
   loadForexPrices();
-  loadSETPrices(); // ✅ โหลดครั้งแรกทันที
+  loadSETPrices();
 
-  forexInterval = setInterval(loadForexPrices, 3000); // ทุก 3 วิ
-  setPriceInterval = setInterval(loadSETPrices, 15 * 60 * 1000); // ทุก 15 นาที
+  forexInterval = setInterval(loadForexPrices, 3000);
+  setPriceInterval = setInterval(loadSETPrices, 15 * 60 * 1000);
 }
-
-
 
 async function loadWatchlist() {
   try {

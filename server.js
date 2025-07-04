@@ -1,19 +1,23 @@
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
+const puppeteer = require('puppeteer');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
-const puppeteer = require('puppeteer');
+
 const SET_WATCHLIST_PATH = 'set_watchlist.json';
 let setCache = { data: {}, timestamp: 0 };
 
 app.use(cors({ origin: '*' }));
-app.use(express.json()); // ✅ รองรับ JSON body
+app.use(express.json());
 
+// ✅ หน้า root
 app.get('/', (req, res) => {
   res.send(`<h2>✅ FIX Client is running</h2><p>Try <a href="/forex_data.json">/forex_data.json</a></p>`);
 });
 
+// ✅ Forex data
 app.get('/forex_data.json', (req, res) => {
   try {
     const data = fs.readFileSync('forex_data.json', 'utf8');
@@ -24,6 +28,7 @@ app.get('/forex_data.json', (req, res) => {
   }
 });
 
+// ✅ Mock SET data (optional)
 app.get('/set_data.json', (req, res) => {
   try {
     const data = fs.readFileSync('set_data.json', 'utf8');
@@ -33,7 +38,6 @@ app.get('/set_data.json', (req, res) => {
     res.status(500).json({ error: 'ไม่สามารถโหลดข้อมูล SET' });
   }
 });
-
 
 // ✅ ดึงราคาหุ้นจาก SET
 async function getSETPrice(symbol) {
@@ -60,12 +64,10 @@ async function getSETPrice(symbol) {
   }
 }
 
-
-// ✅ API: POST /api/set-prices
+// ✅ GET: ราคาหุ้นจาก watchlist + cache
 app.get('/api/set-prices', async (req, res) => {
   const now = Date.now();
   const cacheAge = (now - setCache.timestamp) / 1000;
-  console.log('📡 SET watchlist:', symbols);
 
   if (cacheAge < 60 && Object.keys(setCache.data).length > 0) {
     return res.json({ ...setCache.data, cached: true });
@@ -75,6 +77,8 @@ app.get('/api/set-prices', async (req, res) => {
     const raw = fs.readFileSync(SET_WATCHLIST_PATH, 'utf8');
     const symbols = JSON.parse(raw);
 
+    console.log('📡 SET watchlist:', symbols);
+
     const results = {};
     for (const symbol of symbols) {
       const price = await getSETPrice(symbol);
@@ -82,7 +86,6 @@ app.get('/api/set-prices', async (req, res) => {
     }
 
     setCache = { data: results, timestamp: now };
-
     res.json(results);
   } catch (err) {
     console.error('❌ Error fetching SET prices:', err);
@@ -90,9 +93,7 @@ app.get('/api/set-prices', async (req, res) => {
   }
 });
 
-
-
-// ✅ GET watchlist
+// ✅ Forex watchlist
 app.get('/api/watchlist', (req, res) => {
   try {
     const data = fs.readFileSync('watchlist.json', 'utf8');
@@ -103,7 +104,6 @@ app.get('/api/watchlist', (req, res) => {
   }
 });
 
-// ✅ POST watchlist
 app.post('/api/watchlist', (req, res) => {
   try {
     fs.writeFileSync('watchlist.json', JSON.stringify(req.body, null, 2));
@@ -113,6 +113,7 @@ app.post('/api/watchlist', (req, res) => {
   }
 });
 
+// ✅ SET watchlist
 app.get('/api/set-watchlist', (req, res) => {
   try {
     const raw = fs.readFileSync(SET_WATCHLIST_PATH, 'utf8');
@@ -138,6 +139,7 @@ app.post('/api/set-watchlist', (req, res) => {
   }
 });
 
+// ✅ Start server
 app.listen(PORT, () => {
   console.log(`🌐 Express server running on port ${PORT}`);
 });
