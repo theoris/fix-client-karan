@@ -132,6 +132,8 @@ function sendMarketDataRequest(socket, msgSeqNum, visibleSymbols) {
 function startFIXClient() {
   const socket = new net.Socket();
   let msgSeqNum = 1;
+
+  // ✅ โหลด watchlist สดจากไฟล์ทุกครั้ง
   const visibleSymbols = getVisibleSymbols();
 
   socket.connect({ port: config.port, host: config.host }, () => {
@@ -158,18 +160,20 @@ function startFIXClient() {
 
   socket.on('data', (data) => {
     const raw = data.toString();
-    console.log('📥 Received:', raw.replace(/\x01/g, '|'));
-
     const messages = raw.split(/(?=8=FIX\.4\.4)/g);
+
     for (const msg of messages) {
       const parsed = parseFIXMessage(msg);
       const msgType = parsed['35'];
 
       if (msgType === 'A') {
         console.log('✅ FIX Logon successful');
-        sendMarketDataRequest(socket, msgSeqNum++, visibleSymbols);
 
-        // ✅ Heartbeat
+        // ✅ โหลด watchlist สดอีกครั้งก่อน subscribe
+        const updatedSymbols = getVisibleSymbols();
+        sendMarketDataRequest(socket, msgSeqNum++, updatedSymbols);
+
+        // ✅ ส่ง heartbeat ทุก 30 วินาที
         setInterval(() => {
           const heartbeat = buildFIXMessage([
             ['35', '0'],
