@@ -9,7 +9,13 @@ const PORT = process.env.PORT || 3000;
 const SET_WATCHLIST_PATH = 'set_watchlist.json';
 let setCache = { data: {}, timestamp: 0 };
 
-app.use(cors({ origin: '*' }));
+// ✅ Enable CORS for GitHub Pages
+app.use(cors({
+  origin: 'https://theoris.github.io',
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type']
+}));
+
 app.use(express.json());
 
 // ✅ หน้า root
@@ -47,11 +53,11 @@ async function getSETPrice(symbol) {
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      timeout: 0 // ✅ ปิด timeout
+      timeout: 0
     });
 
     const page = await browser.newPage();
-    page.setDefaultNavigationTimeout(0); // ✅ ปิด timeout ระหว่างโหลด
+    page.setDefaultNavigationTimeout(0);
 
     await page.goto(url, { waitUntil: 'networkidle2' });
 
@@ -67,7 +73,6 @@ async function getSETPrice(symbol) {
     return null;
   }
 }
-
 
 // ✅ GET: ราคาหุ้นจาก watchlist + cache
 app.get('/api/set-prices', async (req, res) => {
