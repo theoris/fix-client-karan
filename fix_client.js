@@ -25,7 +25,7 @@ const symbolIdMap = {
   NZDUSD: '12',
   USDCAD: '8',
   USDCHF: '6',
-  USDJPY: '3',
+  USDJPY: '4',
   AUDCAD: '18',
   AUDCHF: '23',
   AUDJPY: '11',
