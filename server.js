@@ -1,10 +1,7 @@
-const chromium = require('@sparticuz/chromium');
-const { chromium: playwrightChromium } = require('playwright-core');
-
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
-const puppeteer = require('puppeteer');
+const { chromium: playwrightChromium } = require('playwright-core');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -42,16 +39,18 @@ app.get('/set_data.json', (req, res) => {
   }
 });
 
-// ✅ ดึงราคาหุ้นจาก SET
+// ✅ ดึงราคาหุ้นจาก SET ด้วย Playwright + dynamic import
 async function getSETPrice(symbol) {
   try {
+    const chromium = await import('@sparticuz/chromium');
+
     const url = `https://www.set.or.th/en/market/product/stock/quote/${symbol}/price`;
 
     const browser = await playwrightChromium.launch({
-      args: chromium.args,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
-      defaultViewport: chromium.defaultViewport,
+      args: chromium.default.args,
+      executablePath: await chromium.default.executablePath(),
+      headless: chromium.default.headless,
+      defaultViewport: chromium.default.defaultViewport,
     });
 
     const page = await browser.newPage();
@@ -69,7 +68,6 @@ async function getSETPrice(symbol) {
     return null;
   }
 }
-
 
 // ✅ GET: ราคาหุ้นจาก watchlist + cache
 app.get('/api/set-prices', async (req, res) => {
@@ -139,7 +137,7 @@ app.post('/api/set-watchlist', (req, res) => {
 
   try {
     fs.writeFileSync(SET_WATCHLIST_PATH, JSON.stringify(symbols, null, 2));
-    setCache = { data: {}, timestamp: 0 }; // ❌ ล้าง cache
+    setCache = { data: {}, timestamp: 0 };
     res.json({ status: '✅ saved' });
   } catch (err) {
     res.status(500).json({ error: 'ไม่สามารถบันทึก watchlist SET' });
