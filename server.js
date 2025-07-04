@@ -1,14 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅ เปิด CORS สำหรับทุก origin หรือเฉพาะ GitHub Pages
-app.use(cors({
-  origin: '*', // หรือใส่เฉพาะ 'https://theoris.github.io'
-}));
+app.use(cors({ origin: '*' }));
+app.use(express.json()); // ✅ รองรับ JSON body
 
 app.get('/', (req, res) => {
   res.send(`<h2>✅ FIX Client is running</h2><p>Try <a href="/forex_data.json">/forex_data.json</a></p>`);
@@ -21,6 +18,27 @@ app.get('/forex_data.json', (req, res) => {
     res.json(JSON.parse(data));
   } catch (err) {
     res.status(500).json({ error: 'ไม่สามารถโหลดข้อมูล' });
+  }
+});
+
+// ✅ GET watchlist
+app.get('/api/watchlist', (req, res) => {
+  try {
+    const data = fs.readFileSync('watchlist.json', 'utf8');
+    res.setHeader('Cache-Control', 'no-store');
+    res.json(JSON.parse(data));
+  } catch (err) {
+    res.status(500).json({ error: 'ไม่สามารถโหลด watchlist' });
+  }
+});
+
+// ✅ POST watchlist
+app.post('/api/watchlist', (req, res) => {
+  try {
+    fs.writeFileSync('watchlist.json', JSON.stringify(req.body, null, 2));
+    res.json({ status: '✅ saved' });
+  } catch (err) {
+    res.status(500).json({ error: 'ไม่สามารถบันทึก watchlist' });
   }
 });
 
