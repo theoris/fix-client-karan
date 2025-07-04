@@ -31,16 +31,12 @@
   </nav>
 
   <main>
-    <!-- 🔹 SET Tab -->
-    <section id="set-tab" class="tab">
-      <h2>SET Index</h2>
-      <div id="set-output">📡 รอโหลดข้อมูล...</div>
-    </section>
-
     <!-- 💱 Forex Tab -->
     <section id="forex-tab" class="tab">
-      <h2>Forex (cTrader)</h2>
-      <div id="forex-output">📡 รอโหลดข้อมูล...</div>
+      <div id="dashboard" style="display: flex; gap: 20px;">
+        <div id="forex-output" style="flex: 1;"></div>
+        <div id="set-output" style="flex: 1;"></div>
+      </div>
     </section>
     <!-- ⭐ Watchlist Tab -->
     <section id="watchlist-tab" class="tab">

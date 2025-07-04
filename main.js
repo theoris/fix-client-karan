@@ -120,6 +120,34 @@ async function loadWatchlistTab() {
   }
 }
 
+async function loadSETData() {
+  const output = document.getElementById('set-output');
+  if (!output) return;
+
+  output.innerHTML = '📡 กำลังโหลดข้อมูล SET...';
+
+  try {
+    // 🔁 ตัวอย่าง mock API (คุณสามารถเปลี่ยนเป็น API จริงได้)
+    const res = await fetch('https://api.set.or.th/mock/set-data.json');
+    const data = await res.json();
+
+    output.innerHTML = `
+      <table>
+        <thead><tr><th>หุ้น</th><th>ราคา</th></tr></thead>
+        <tbody>
+          ${data.map(
+            (item) =>
+              `<tr><td>${item.symbol}</td><td>${item.price}</td></tr>`
+          ).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    output.innerHTML = '❌ โหลดข้อมูล SET ไม่สำเร็จ';
+    console.error(err);
+  }
+}
+
 async function saveWatchlist(data) {
   try {
     await fetch(`${API_BASE_URL}/api/watchlist`, {
@@ -155,8 +183,13 @@ async function startForexUpdates() {
   clearInterval(forexInterval);
   await loadWatchlist();
   loadForexPrices();
-  forexInterval = setInterval(loadForexPrices, 3000);
+  loadSETData(); // ✅ โหลด SET ด้วย
+  forexInterval = setInterval(() => {
+    loadForexPrices();
+    loadSETData();
+  }, 3000);
 }
+
 
 async function loadWatchlist() {
   try {
