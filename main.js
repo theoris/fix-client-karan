@@ -1,22 +1,31 @@
 let currentWatchlist = {};
 let forexInterval = null;
 
-// โหลด watchlist จาก backend
-async function loadWatchlist() {
-  try {
-    const res = await fetch('/api/watchlist?t=' + Date.now());
-    currentWatchlist = await res.json();
-  } catch (err) {
-    console.error('❌ โหลด watchlist ไม่สำเร็จ:', err);
-    currentWatchlist = {
-      XAUUSD: true,
-      EURUSD: true,
-      USDJPY: true
-    };
-  }
+// ✅ URL ของ backend (Render)
+const API_URL = 'https://fix-client-karan.onrender.com/forex_data.json';
+
+// ✅ ปรับขนาดฟอนต์
+function adjustFontSize(delta) {
+  const html = document.documentElement;
+  const body = document.body;
+  const current = parseFloat(getComputedStyle(html).fontSize);
+  const newSize = Math.max(10, current + delta);
+  html.style.fontSize = newSize + 'px';
+  body.style.fontSize = newSize + 'px';
 }
 
-// โหลดราคาสดจาก backend และแสดงเฉพาะ symbol ที่เปิดอยู่
+// ✅ แปลงราคาให้มี comma
+function formatPrice(value) {
+  const num = parseFloat(value);
+  return isNaN(num)
+    ? '-'
+    : num.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 5
+      });
+}
+
+// ✅ โหลดราคาสดจาก backend
 async function loadForexPrices() {
   const output = document.getElementById('forex-output');
   if (!output) return;
@@ -24,30 +33,34 @@ async function loadForexPrices() {
   output.innerHTML = '📡 กำลังโหลด...';
 
   try {
-    const res = await fetch('/api/forex?t=' + Date.now());
+    const res = await fetch(API_URL + '?t=' + Date.now());
     const data = await res.json();
 
-    const visibleSymbols = Object.keys(currentWatchlist)
-      .filter(sym => currentWatchlist[sym] && data[sym]);
+    const visibleSymbols = Object.keys(currentWatchlist).filter(
+      (sym) => currentWatchlist[sym] && data[sym]
+    );
 
     output.innerHTML = `
       <table>
         <thead><tr><th>Symbol</th><th>ราคาปิดล่าสุด</th></tr></thead>
         <tbody>
-          ${visibleSymbols.map(code =>
-            `<tr><td>${code}</td><td>${formatPrice(data[code])}</td></tr>`
-          ).join('')}
+          ${visibleSymbols
+            .map(
+              (code) =>
+                `<tr><td>${code}</td><td>${formatPrice(data[code])}</td></tr>`
+            )
+            .join('')}
         </tbody>
       </table>
       <p style="font-size: 0.8em; color: gray;">📡 Source: ${data.source}</p>
     `;
   } catch (err) {
     output.innerHTML = '❌ โหลดข้อมูลไม่สำเร็จ';
-    console.error('❌ Error loading forex prices:', err);
+    console.error(err);
   }
 }
 
-// โหลดและแสดง watchlist พร้อม checkbox
+// ✅ โหลด watchlist และแสดง checkbox
 async function loadWatchlistTab() {
   const list = document.getElementById('watchlist-list');
   list.innerHTML = '📡 กำลังโหลด...';
@@ -55,34 +68,38 @@ async function loadWatchlistTab() {
   try {
     const res = await fetch('/api/watchlist?t=' + Date.now());
     const watchlist = await res.json();
+    currentWatchlist = watchlist;
 
-    list.innerHTML = Object.entries(watchlist).map(([symbol, visible]) => `
+    list.innerHTML = Object.entries(watchlist)
+      .map(
+        ([symbol, visible]) => `
       <li>
         <label>
-          <input type="checkbox" data-symbol="${symbol}" ${visible ? 'checked' : ''}>
+          <input type="checkbox" data-symbol="${symbol}" ${
+          visible ? 'checked' : ''
+        }>
           ${symbol}
         </label>
-      </li>
-    `).join('');
+      </li>`
+      )
+      .join('');
 
-    // เพิ่ม event listener
-    list.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+    list.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
       checkbox.addEventListener('change', () => {
         const updated = {};
-        list.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        list.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
           updated[cb.dataset.symbol] = cb.checked;
         });
         saveWatchlist(updated);
       });
     });
-
   } catch (err) {
     list.innerHTML = '❌ โหลด watchlist ไม่สำเร็จ';
     console.error(err);
   }
 }
 
-// บันทึก watchlist กลับไปที่ backend
+// ✅ บันทึก watchlist กลับไปที่ backend
 async function saveWatchlist(data) {
   try {
     await fetch('/api/watchlist', {
@@ -97,9 +114,9 @@ async function saveWatchlist(data) {
   }
 }
 
-// เปลี่ยนแท็บ
+// ✅ เปลี่ยนแท็บ
 function switchTab(tabId) {
-  document.querySelectorAll('.tab').forEach(tab => {
+  document.querySelectorAll('.tab').forEach((tab) => {
     tab.style.display = 'none';
   });
   document.getElementById(`${tabId}-tab`).style.display = 'block';
@@ -115,24 +132,7 @@ function switchTab(tabId) {
   }
 }
 
-function adjustFontSize(delta) {
-  const html = document.documentElement;
-  const body = document.body;
-
-  const currentSize = parseFloat(getComputedStyle(html).fontSize);
-  const newSize = Math.max(10, currentSize + delta); // ป้องกันเล็กเกินไป
-
-  html.style.fontSize = newSize + 'px';
-  body.style.fontSize = newSize + 'px';
-}
-
-function formatPrice(value) {
-  const num = parseFloat(value);
-  return isNaN(num) ? '-' : num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 5 });
-}
-
-
-// เริ่มโหลดราคาสดเมื่อเข้าแท็บ Forex
+// ✅ เริ่มโหลดราคาสดเมื่อเข้าแท็บ Forex
 async function startForexUpdates() {
   clearInterval(forexInterval);
   await loadWatchlist();
@@ -140,13 +140,28 @@ async function startForexUpdates() {
   forexInterval = setInterval(loadForexPrices, 3000);
 }
 
-// ตั้งค่า event สำหรับปุ่ม nav
-document.querySelectorAll('nav button').forEach(btn => {
+// ✅ โหลด watchlist สำหรับแท็บ Forex
+async function loadWatchlist() {
+  try {
+    const res = await fetch('/api/watchlist?t=' + Date.now());
+    currentWatchlist = await res.json();
+  } catch (err) {
+    console.error('❌ โหลด watchlist ไม่สำเร็จ:', err);
+    currentWatchlist = {
+      XAUUSD: true,
+      EURUSD: true,
+      USDJPY: true
+    };
+  }
+}
+
+// ✅ ตั้งค่า event สำหรับปุ่ม nav
+document.querySelectorAll('nav button').forEach((btn) => {
   btn.addEventListener('click', () => {
     const tab = btn.getAttribute('onclick').match(/switchTab\('(.+)'\)/)[1];
     switchTab(tab);
   });
 });
 
-// เริ่มต้นที่แท็บแรก
+// ✅ เริ่มต้นที่แท็บแรก
 switchTab('set');
