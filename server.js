@@ -21,6 +21,17 @@ app.get('/forex_data.json', (req, res) => {
   }
 });
 
+app.get('/set_data.json', (req, res) => {
+  try {
+    const data = fs.readFileSync('set_data.json', 'utf8');
+    res.setHeader('Cache-Control', 'no-store');
+    res.json(JSON.parse(data));
+  } catch (err) {
+    res.status(500).json({ error: 'ไม่สามารถโหลดข้อมูล SET' });
+  }
+});
+
+
 // ✅ GET watchlist
 app.get('/api/watchlist', (req, res) => {
   try {
