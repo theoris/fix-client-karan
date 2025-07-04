@@ -37,24 +37,27 @@ app.get('/set_data.json', (req, res) => {
 
 // ✅ ดึงราคาหุ้นจาก SET
 async function getSETPrice(symbol) {
-  const url = `https://www.set.or.th/en/market/product/stock/quote/${symbol}/price`;
-  const browser = await puppeteer.launch({
-    headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
+  try {
+    const url = `https://www.set.or.th/en/market/product/stock/quote/${symbol}/price`;
+    const browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
 
-  const page = await browser.newPage();
-  await page.goto(url, { waitUntil: 'networkidle2' });
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: 'networkidle2' });
 
-  const price = await page.evaluate(() => {
-    const el = document.querySelector('.stock-info');
-    return el ? el.textContent.trim() : null;
-  });
+    const price = await page.evaluate(() => {
+      const el = document.querySelector('.stock-info');
+      return el ? el.textContent.trim() : null;
+    });
 
-  await browser.close();
-  console.log(`🔍 Loading SET price for ${symbol}`);
-
-  return price;
+    await browser.close();
+    return price;
+  } catch (err) {
+    console.error(`❌ Failed to fetch SET price for ${symbol}:`, err.message);
+    return null;
+  }
 }
 
 

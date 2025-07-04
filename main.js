@@ -4,7 +4,7 @@ const API_BASE_URL = location.hostname.includes('localhost')
 
 let currentWatchlist = {};
 let forexInterval = null;
-let setInterval = null;
+let setPriceInterval = null;
 
 
 function adjustFontSize(delta) {
@@ -238,13 +238,16 @@ function switchTab(tabId) {
   document.querySelectorAll('.tab').forEach((tab) => {
     tab.style.display = 'none';
   });
-  document.getElementById(`${tabId}-tab`).style.display = 'block';
+  //document.getElementById(`${tabId}-tab`).style.display = 'block';
+  const tabEl = document.getElementById(`${tabId}-tab`);
+  if (tabEl) tabEl.style.display = 'block';
+
 
   if (tabId === 'forex') {
     startForexUpdates();
   } else {
     clearInterval(forexInterval);
-    clearInterval(setInterval);
+    clearInterval(setPriceInterval);
   }
 
   if (tabId === 'watchlist') {
@@ -255,14 +258,14 @@ function switchTab(tabId) {
 
 async function startForexUpdates() {
   clearInterval(forexInterval);
-  clearInterval(setInterval);
+  clearInterval(setPriceInterval);
 
   await loadWatchlist();
   loadForexPrices();
   loadSETPrices(); // ✅ โหลดครั้งแรกทันที
 
   forexInterval = setInterval(loadForexPrices, 3000); // ทุก 3 วิ
-  setInterval = setInterval(loadSETPrices, 15 * 60 * 1000); // ทุก 15 นาที
+  setPriceInterval = setInterval(loadSETPrices, 15 * 60 * 1000); // ทุก 15 นาที
 }
 
 
