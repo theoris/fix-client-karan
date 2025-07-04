@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
-const puppeteer = require('puppeteer-core');
+const puppeteer = require('puppeteer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,18 +39,14 @@ app.get('/set_data.json', (req, res) => {
   }
 });
 
-// ✅ ดึงราคาหุ้นจาก SET ด้วย Puppeteer + dynamic import
+// ✅ ดึงราคาหุ้นจาก SET ด้วย Puppeteer
 async function getSETPrice(symbol) {
   try {
-    const chromium = await import('@sparticuz/chromium');
-
     const url = `https://www.set.or.th/en/market/product/stock/quote/${symbol}/price`;
 
     const browser = await puppeteer.launch({
-      args: chromium.default.args,
-      executablePath: await chromium.default.executablePath(),
-      headless: chromium.default.headless,
-      defaultViewport: chromium.default.defaultViewport,
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
 
     const page = await browser.newPage();
