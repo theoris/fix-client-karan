@@ -29,8 +29,6 @@ async function loadForexPrices() {
   const output = document.getElementById('forex-output');
   if (!output) return;
 
-  output.innerHTML = '📡 กำลังโหลด...';
-
   try {
     const res = await fetch(`${API_BASE_URL}/forex_data.json?t=${Date.now()}`);
     const data = await res.json();
@@ -39,25 +37,48 @@ async function loadForexPrices() {
       (sym) => currentWatchlist[sym] && data[sym]
     );
 
-    output.innerHTML = `
-      <table>
-        <thead><tr><th>Symbol</th><th>ราคาปิดล่าสุด</th></tr></thead>
-        <tbody>
-          ${visibleSymbols
-            .map(
-              (code) =>
-                `<tr><td>${code}</td><td>${formatPrice(data[code])}</td></tr>`
-            )
-            .join('')}
-        </tbody>
-      </table>
-      <p style="font-size: 0.8em; color: gray;">📡 Source: ${data.source || 'FIX Client'}</p>
-    `;
+    // ✅ ถ้ายังไม่มีตาราง → สร้างใหม่
+    if (!output.querySelector('table')) {
+      output.innerHTML = `
+        <table>
+          <thead><tr><th>Symbol</th><th>ราคาปิดล่าสุด</th></tr></thead>
+          <tbody>
+            ${visibleSymbols
+              .map(
+                (code) =>
+                  `<tr><td>${code}</td><td data-symbol="${code}">-</td></tr>`
+              )
+              .join('')}
+          </tbody>
+        </table>
+        <p style="font-size: 0.8em; color: gray;">📡 Source: ${data.source || 'FIX Client'}</p>
+      `;
+    }
+
+    // ✅ อัปเดตเฉพาะราคาที่เปลี่ยน
+    visibleSymbols.forEach((code) => {
+      const cell = output.querySelector(`td[data-symbol="${code}"]`);
+      const newPrice = formatPrice(data[code]);
+      if (cell && cell.textContent !== newPrice) {
+        const oldPrice = parseFloat(cell.textContent.replace(/,/g, ''));
+        const newVal = parseFloat(data[code]);
+
+        // ✅ เพิ่มสีขึ้น/ลง
+        cell.classList.remove('price-up', 'price-down');
+        if (!isNaN(oldPrice)) {
+          if (newVal > oldPrice) cell.classList.add('price-up');
+          else if (newVal < oldPrice) cell.classList.add('price-down');
+        }
+
+        cell.textContent = newPrice;
+      }
+    });
   } catch (err) {
     output.innerHTML = '❌ โหลดข้อมูลไม่สำเร็จ';
     console.error(err);
   }
 }
+
 
 async function loadWatchlistTab() {
   const list = document.getElementById('watchlist-list');

@@ -84,3 +84,14 @@ ul li {
   border-radius: 4px;
   box-shadow: 0 0 3px rgba(0,0,0,0.05);
 }
+.price-up {
+  color: green;
+  font-weight: bold;
+  transition: color 0.3s;
+}
+
+.price-down {
+  color: red;
+  font-weight: bold;
+  transition: color 0.3s;
+}
