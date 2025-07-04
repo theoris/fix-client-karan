@@ -5,7 +5,6 @@ node_modules/
 
 # FIX client data
 forex_data.json
-watchlist.json
 
 # Logs
 *.log
