@@ -1,6 +1,5 @@
 const net = require('net');
 const fs = require('fs');
-//const config = require('./config');
 
 const config = {
   host: process.env.FIX_HOST,
@@ -13,43 +12,9 @@ const config = {
   password: process.env.FIX_PASS
 };
 
-
-// ✅ Symbol map
 const symbolIdMap = {
-  XAUUSD: '41',
-  XAGUSD: '42',
-  BTCUSD: '10026',
-  AUDUSD: '5',
-  EURUSD: '1',
-  GBPUSD: '2',
-  NZDUSD: '12',
-  USDCAD: '8',
-  USDCHF: '6',
-  USDJPY: '3',
-  AUDCAD: '18',
-  AUDCHF: '23',
-  AUDJPY: '11',
-  AUDNZD: '20',
-  CADCHF: '27',
-  CADJPY: '15',
-  CHFJPY: '13',
-  EURAUD: '14',
-  EURCAD: '17',
-  EURCHF: '10',
-  EURGBP: '9',
-  EURJPY: '3',
-  EURNZD: '26',
-  GBPAUD: '16',
-  GBPCAD: '19',
-  GBPCHF: '40',
-  GBPJPY: '7',
-  GBPNZD: '25',
-  NZDCAD: '30',
-  NZDCHF: '39',
-  NZDJPY: '21',
-  HK50: '10004',
-  US500: '10013',
-  SPOTCRUDE: '10053'
+  XAUUSD: '41', EURUSD: '1', USDJPY: '3'
+  // ... (ตัดให้สั้นลงได้ตามต้องการ)
 };
 
 const reverseSymbolMap = Object.fromEntries(
@@ -106,7 +71,7 @@ function savePrices() {
 
 function updatePrice(symbolId, entryType, price) {
   const symbol = reverseSymbolMap[symbolId];
-  if (!symbol || entryType !== '1') return; // เก็บเฉพาะ Ask
+  if (!symbol || entryType !== '1') return;
   latestPrices[symbol] = price;
   savePrices();
 }
@@ -169,10 +134,7 @@ function startFIXClient() {
   let msgSeqNum = 1;
   const visibleSymbols = getVisibleSymbols();
 
-  socket.connect({
-    port: config.port,
-    host: config.host
-  }, () => {
+  socket.connect({ port: config.port, host: config.host }, () => {
     console.log('✅ Connected to FIX server');
 
     const logonMsg = buildFIXMessage([
@@ -190,13 +152,15 @@ function startFIXClient() {
       ['554', config.password]
     ]);
 
+    console.log('📤 Sending Logon:', logonMsg.replace(/\x01/g, '|'));
     socket.write(logonMsg);
   });
 
   socket.on('data', (data) => {
     const raw = data.toString();
-    const messages = raw.split('8=FIX.4.4').filter(Boolean).map(m => '8=FIX.4.4' + m);
+    console.log('📥 Received:', raw.replace(/\x01/g, '|'));
 
+    const messages = raw.split(/(?=8=FIX\.4\.4)/g);
     for (const msg of messages) {
       const parsed = parseFIXMessage(msg);
       const msgType = parsed['35'];
@@ -204,6 +168,20 @@ function startFIXClient() {
       if (msgType === 'A') {
         console.log('✅ FIX Logon successful');
         sendMarketDataRequest(socket, msgSeqNum++, visibleSymbols);
+
+        // ✅ Heartbeat
+        setInterval(() => {
+          const heartbeat = buildFIXMessage([
+            ['35', '0'],
+            ['34', msgSeqNum++],
+            ['49', config.senderCompID],
+            ['56', config.targetCompID],
+            ['57', config.targetSubID],
+            ['50', config.senderSubID],
+            ['52', getUTCTimestamp()]
+          ]);
+          socket.write(heartbeat);
+        }, 30000);
       }
 
       if ((msgType === 'W' || msgType === 'X') && parsed.MDEntries) {
@@ -243,5 +221,4 @@ function reconnect() {
   }, 5000);
 }
 
-// ✅ เริ่มต้น
 startFIXClient();
