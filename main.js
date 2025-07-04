@@ -128,7 +128,7 @@ async function loadSETData() {
 
   try {
     // 🔁 ตัวอย่าง mock API (คุณสามารถเปลี่ยนเป็น API จริงได้)
-    const res = await fetch('https://api.set.or.th/mock/set-data.json');
+    const res = await fetch('https://theoris.github.io/fix-client-karan/set_data.json');
     const data = await res.json();
 
     output.innerHTML = `
