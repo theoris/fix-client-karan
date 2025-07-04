@@ -1,13 +1,17 @@
 const express = require('express');
+const cors = require('cors');
 const fs = require('fs');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ✅ เปิด CORS สำหรับทุก origin หรือเฉพาะ GitHub Pages
+app.use(cors({
+  origin: '*', // หรือใส่เฉพาะ 'https://theoris.github.io'
+}));
+
 app.get('/', (req, res) => {
-  res.send(`
-    <h2>✅ FIX Client is running</h2>
-    <p>Try <a href="/forex_data.json">/forex_data.json</a> to see live data.</p>
-  `);
+  res.send(`<h2>✅ FIX Client is running</h2><p>Try <a href="/forex_data.json">/forex_data.json</a></p>`);
 });
 
 app.get('/forex_data.json', (req, res) => {
