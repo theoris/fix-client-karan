@@ -52,6 +52,8 @@ async function getSETPrice(symbol) {
   });
 
   await browser.close();
+  console.log(`🔍 Loading SET price for ${symbol}`);
+
   return price;
 }
 
@@ -60,6 +62,7 @@ async function getSETPrice(symbol) {
 app.get('/api/set-prices', async (req, res) => {
   const now = Date.now();
   const cacheAge = (now - setCache.timestamp) / 1000;
+  console.log('📡 SET watchlist:', symbols);
 
   if (cacheAge < 60 && Object.keys(setCache.data).length > 0) {
     return res.json({ ...setCache.data, cached: true });
@@ -76,6 +79,7 @@ app.get('/api/set-prices', async (req, res) => {
     }
 
     setCache = { data: results, timestamp: now };
+
     res.json(results);
   } catch (err) {
     console.error('❌ Error fetching SET prices:', err);
