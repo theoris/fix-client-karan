@@ -1,0 +1,17 @@
+{
+  "name": "ctrader-fix-test",
+  "version": "1.0.0",
+  "description": "**GoldClay Tracker** คือ Web App สำหรับติดตามราคาสินทรัพย์ทั้งฝั่ง **SET Index** ของไทย และ **Forex** จาก cTrader พร้อมฟีเจอร์ครบครัน:",
+  "main": "main.js",
+  "scripts": {
+    "start": "concurrently \"node fix_client.js\" \"node local_server.js\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^9.2.0",
+    "express": "^5.1.0",
+    "uuid": "^11.1.0"
+  }
+}

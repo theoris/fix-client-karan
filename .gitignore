@@ -1,0 +1,15 @@
+config.js
+# Node.js
+node_modules/
+.env
+
+# FIX client data
+forex_data.json
+watchlist.json
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

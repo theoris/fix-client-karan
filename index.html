@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GoldClay Tracker 1.0</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="favicon.png" />
+
+  <!-- เฉพาะตอนเปิด local เท่านั้น -->
+  <script>
+    if (location.hostname === 'localhost' || location.protocol === 'file:') {
+      document.write('<script src="config.js"><\/script>');
+    }
+  </script>
+</head>
+<body>
+  <header>
+    <h1>🏆 GoldClay Tracker</h1>
+    <button onclick="toggleTheme()">🌓 Toggle Theme</button>
+  </header>
+
+  <nav>
+    <button onclick="switchTab('set')">SET</button>
+    <button onclick="switchTab('forex')">Forex</button>
+    <button onclick="switchTab('watchlist')">Watchlist</button>
+    <div class="font-controls">
+      <button onclick="adjustFontSize(1)">A+</button>
+      <button onclick="adjustFontSize(-1)">A−</button>
+    </div>
+  </nav>
+
+  <main>
+    <!-- 🔹 SET Tab -->
+    <section id="set-tab" class="tab">
+      <h2>SET Index</h2>
+      <div id="set-output">📡 รอโหลดข้อมูล...</div>
+    </section>
+
+    <!-- 💱 Forex Tab -->
+    <section id="forex-tab" class="tab">
+      <h2>Forex (cTrader)</h2>
+      <div id="forex-output">📡 รอโหลดข้อมูล...</div>
+    </section>
+    <!-- ⭐ Watchlist Tab -->
+    <section id="watchlist-tab" class="tab">
+      <h2>Watchlist</h2>
+      <ul id="watchlist-list">📡 รอโหลดรายการ...</ul>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>📈 Powered by GoldClay & Netlify Functions</p>
+  </footer>
+
+  <script src="main.js"></script>
+  <script src="settrade.js"></script>
+  <script>
+  async function fetchPrices() {
+    const res = await fetch('/api/forex');
+    const data = await res.json();
+
+    document.getElementById('xauusd').textContent = data.XAUUSD;
+    document.getElementById('eurusd').textContent = data.EURUSD;
+    document.getElementById('usdjpy').textContent = data.USDJPY;
+
+    console.log('📡 Source:', data.source);
+  }
+
+  
+  setInterval(loadForexPrices, 3000);
+  loadForexPrices();
+  //setInterval(fetchPrices, 3000); // อัปเดตทุก 3 วินาที
+  //fetchPrices();
+  </script>
+
+</body>
+</html>
