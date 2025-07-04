@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
-const { chromium: playwrightChromium } = require('playwright-core');
+const puppeteer = require('puppeteer-core');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,14 +39,14 @@ app.get('/set_data.json', (req, res) => {
   }
 });
 
-// ✅ ดึงราคาหุ้นจาก SET ด้วย Playwright + dynamic import
+// ✅ ดึงราคาหุ้นจาก SET ด้วย Puppeteer + dynamic import
 async function getSETPrice(symbol) {
   try {
     const chromium = await import('@sparticuz/chromium');
 
     const url = `https://www.set.or.th/en/market/product/stock/quote/${symbol}/price`;
 
-    const browser = await playwrightChromium.launch({
+    const browser = await puppeteer.launch({
       args: chromium.default.args,
       executablePath: await chromium.default.executablePath(),
       headless: chromium.default.headless,
@@ -54,7 +54,7 @@ async function getSETPrice(symbol) {
     });
 
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'networkidle' });
+    await page.goto(url, { waitUntil: 'networkidle2' });
 
     const price = await page.evaluate(() => {
       const el = document.querySelector('.stock-info');
