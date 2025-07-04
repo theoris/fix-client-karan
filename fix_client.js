@@ -1,6 +1,18 @@
 const net = require('net');
 const fs = require('fs');
-const config = require('./config');
+//const config = require('./config');
+
+const config = {
+  host: process.env.FIX_HOST,
+  port: parseInt(process.env.FIX_PORT),
+  senderCompID: process.env.FIX_SENDER,
+  targetCompID: process.env.FIX_TARGET,
+  senderSubID: process.env.FIX_SENDER_SUB,
+  targetSubID: process.env.FIX_TARGET_SUB,
+  username: process.env.FIX_USER,
+  password: process.env.FIX_PASS
+};
+
 
 // ✅ Symbol map
 const symbolIdMap = {
