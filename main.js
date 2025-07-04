@@ -1,4 +1,3 @@
-// ✅ รองรับทั้ง dev (localhost) และ prod (Render)
 const API_BASE_URL = location.hostname.includes('localhost')
   ? 'http://localhost:3000'
   : 'https://fix-client-karan.onrender.com';
@@ -28,11 +27,6 @@ function formatPrice(value) {
 async function loadForexPrices() {
   const output = document.getElementById('forex-output');
   if (!output) return;
-  if (visibleSymbols.length === 0) {
-    output.innerHTML = '<p>⚠️ ไม่มี symbol ที่เลือกไว้ใน watchlist</p>';
-    return;
-  }
-
 
   try {
     const res = await fetch(`${API_BASE_URL}/forex_data.json?t=${Date.now()}`);
@@ -42,7 +36,12 @@ async function loadForexPrices() {
       (sym) => currentWatchlist[sym] && data[sym]
     );
 
-    // ✅ ถ้ายังไม่มีตาราง → สร้างใหม่
+    if (visibleSymbols.length === 0) {
+      output.innerHTML = '<p>⚠️ ไม่มี symbol ที่เลือกไว้ใน watchlist</p>';
+      return;
+    }
+
+    // ✅ สร้างตารางครั้งแรก
     if (!output.querySelector('table')) {
       output.innerHTML = `
         <table>
@@ -68,7 +67,6 @@ async function loadForexPrices() {
         const oldPrice = parseFloat(cell.textContent.replace(/,/g, ''));
         const newVal = parseFloat(data[code]);
 
-        // ✅ เพิ่มสีขึ้น/ลง
         cell.classList.remove('price-up', 'price-down');
         if (!isNaN(oldPrice)) {
           if (newVal > oldPrice) cell.classList.add('price-up');
@@ -78,17 +76,11 @@ async function loadForexPrices() {
         cell.textContent = newPrice;
       }
     });
-    console.log('📊 currentWatchlist:', currentWatchlist);
-    console.log('📊 forex data:', data);
-    console.log('📊 visibleSymbols:', visibleSymbols);
-
-
   } catch (err) {
     output.innerHTML = '❌ โหลดข้อมูลไม่สำเร็จ';
     console.error(err);
   }
 }
-
 
 async function loadWatchlistTab() {
   const list = document.getElementById('watchlist-list');
@@ -158,13 +150,13 @@ function switchTab(tabId) {
     loadWatchlistTab();
   }
 }
+
 async function startForexUpdates() {
   clearInterval(forexInterval);
-  await loadWatchlist(); // ✅ ต้องโหลดก่อน
+  await loadWatchlist();
   loadForexPrices();
   forexInterval = setInterval(loadForexPrices, 3000);
 }
-
 
 async function loadWatchlist() {
   try {
