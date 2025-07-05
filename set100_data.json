@@ -1,5 +1,19 @@
 [
   {
+    "Symbol": "SET",
+    "Open": 1127.35,
+    "High": 1128.08,
+    "Low": 1115.37,
+    "Last": 1119.94,
+    "Change": -7.27,
+    "%Change": -0.64,
+    "Bid": "Bid",
+    "Offer": "Offer",
+    "Volume(Shares)": 7625438.0,
+    "Value('000 Baht)": 27794.63,
+    "Update": "2025-07-05T03:20:08"
+  },
+  {
     "Symbol": "AAV",
     "Open": "1.14",
     "High": "1.19",
